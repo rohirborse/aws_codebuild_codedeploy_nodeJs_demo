@@ -41,12 +41,7 @@ pipeline {
                 sh "docker tag ${IMAGE_REPO_NAME}:${IMAGE_TAG} ${REPOSITORY_URI}:$IMAGE_TAG"
                 sh "docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:${IMAGE_TAG}"
          }
-        }
-    stage('Deploy to ECS') {
-            steps {
-               sh "aws ecs update-service --cluster chatgpt --service taskgpt --task-definition arn:aws:ecs:ap-south-1:561775821658:task-definition/task:1"
-            }
-        }     
+        }    
       }
     }
 }
