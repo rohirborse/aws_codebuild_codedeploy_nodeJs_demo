@@ -1,61 +1,47 @@
 pipeline {
-    agent { label 'any' }
-    tools {nodejs "node16" }
+    agent any
     environment {
-        NODE_ENV='production'
+        AWS_ACCOUNT_ID="561775821658"
+        AWS_DEFAULT_REGION="ap-south-1"
+        IMAGE_REPO_NAME="skill"
+        IMAGE_TAG="v1"
+        REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}"
     }
-    
-  
+   
     stages {
-       
-        stage('source') {
+        
+         stage('Logging into AWS ECR') {
             steps {
-               checkout scm
-               sh 'ls -la'
+                script {
+                sh "aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+                }
+                 
             }
-            
         }
         
-         stage('build') {
-             environment{
-                 NODE_ENV='StagingGitTest'
-             }
-             
-            
+        stage('Cloning Git') {
             steps {
-             echo NODE_ENV
-            //  withCredentials([string(credentialsId: 'e8f8ff88-49e0-433a-928d-36a518cd30d6', variable: 'secver')]) {
-            //     // some block
-            //     echo secver
-            // }
-            sh 'npm install'
+                checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '', url: 'https://github.com/sd031/aws_codebuild_codedeploy_nodeJs_demo.git']]])     
             }
-            
         }
-        
-        //  stage('saveArtifact') {
-        //     steps {
-        //       archiveArtifacts artifacts: '**', followSymlinks: false
-        //     }
-            
-        // }
-        
-        
-        
+  
+    // Building Docker images
+    stage('Building image') {
+      steps{
+        script {
+          dockerImage = docker.build "${IMAGE_REPO_NAME}:${IMAGE_TAG}"
+        }
+      }
     }
-
-    post {  
-         always {  
-             echo 'This will always run'  
-         }  
-         success {  
-             echo 'This will run only if successful'  
-         }  
-         failure {  
-             mail bcc: '', body: "<b>Example</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL de build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "ERROR CI: Project name -> ${env.JOB_NAME}", to: "foo@foomail.com";  
-         }  
-         unstable {  
-             echo 'This will run only if the run was marked as unstable'  
-         }   
-     }
+   
+    // Uploading Docker images into AWS ECR
+    stage('Pushing to ECR') {
+     steps{  
+         script {
+                sh "docker tag ${IMAGE_REPO_NAME}:${IMAGE_TAG} ${REPOSITORY_URI}:$IMAGE_TAG"
+                sh "docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:${IMAGE_TAG}"
+         }
+        }
+      }
+    }
 }
