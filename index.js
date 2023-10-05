@@ -9,7 +9,7 @@ app.get('/', (req, res) => {
 })
 
 app.get('/status', (req, res) => {
-    res.send('ok')
+    res.send('ok1')
   })
 
 
