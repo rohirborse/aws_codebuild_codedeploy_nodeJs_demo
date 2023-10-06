@@ -45,7 +45,7 @@ pipeline {
      stage('Cleanup Old Images in ECR') {
             steps {
                 script {
-                    def ecrUrl = "561775821658.dkr.ecr.ap-south-1.amazonaws.com" // Modify with your ECR URL
+                    def ecrUrl = "561775821658.dkr.ecr.ap-south-1.amazonaws.com/skill" // Modify with your ECR URL
                     def retentionCount = 2 // Number of images to retain, adjust as needed
 
                     // List images in the repository
@@ -58,7 +58,7 @@ pipeline {
                     // Delete older images, retaining the latest 'retentionCount' images
                     for (int i = 2; i < imageList.size() - retentionCount; i++) {
                         def imageDigest = imageList[i].imageDigest
-                        sh "aws ecr batch-delete-image --repository-name my-ecr-repo --image-ids imageDigest=$imageDigest"
+                        sh "aws ecr batch-delete-image --repository-name 561775821658.dkr.ecr.ap-south-1.amazonaws.com/skill --image-ids imageDigest=$imageDigest"
                     }
                 }
             }
