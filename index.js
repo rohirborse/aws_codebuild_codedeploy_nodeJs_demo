@@ -12,8 +12,6 @@ app.get('/status', (req, res) => {
     res.send('ok1')
   })
 
-
-
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
 })
