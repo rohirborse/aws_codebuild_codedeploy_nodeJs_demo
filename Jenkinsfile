@@ -42,11 +42,5 @@ pipeline {
                 }
             }
         }
-
-        stage('Deploy to ECS') {
-            steps {
-                sh "aws ecs update-service --cluster ${ECS_CLUSTER} --service ${ECS_SERVICE} --task-definition ${ECS_TASK_DEFINITION}"
-            }
-        }
     }
 }
