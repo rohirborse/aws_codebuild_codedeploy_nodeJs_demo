@@ -44,24 +44,12 @@ pipeline {
       }
      stage('Cleanup Old Images in ECR') {
             steps {
-                script {
-                    def ecrUrl = "561775821658.dkr.ecr.ap-south-1.amazonaws.com/skill" // Modify with your ECR URL
-                    def retentionCount = 2 // Number of images to retain, adjust as needed
+                echo Delating untag images...
+        sh "IMAGES_TO_DELETE=$( aws ecr list-images --region $AWS_DEFAULT_REGION --repository-name $IMAGE_REPO_NAME --filter "tagStatus=UNTAGGED" --query 'imageIds[*]' --output json )"
+        echo "IMAGES_TO_DELETE"
+        sh "aws ecr batch-delete-image --region $AWS_DEFAULT_REGION --repository-name $IMAGE_REPO_NAME --image-ids "$IMAGES_TO_DELETE" || true"
 
-                    // List images in the repository
-                    def images = sh(script: "aws ecr describe-images --repository-name 561775821658.dkr.ecr.ap-south-1.amazonaws.com/skill --query 'imageDetails[*].{ImageURI:imageUri,imageDigest:imageDigest}' --output json", returnStdout: true).trim()
-
-                    // Parse and sort images by push timestamp
-                    def imageList = evaluate(new groovy.json.JsonSlurper().parseText(images))
-                    imageList.sort { it.ImageURI }
-
-                    // Delete older images, retaining the latest 'retentionCount' images
-                    for (int i = 2; i < imageList.size() - retentionCount; i++) {
-                        def imageDigest = imageList[i].imageDigest
-                        sh "aws ecr batch-delete-image --repository-name 561775821658.dkr.ecr.ap-south-1.amazonaws.com/skill --image-ids imageDigest=$imageDigest"
-                    }
                 }
             }
         }   
     }
-}
