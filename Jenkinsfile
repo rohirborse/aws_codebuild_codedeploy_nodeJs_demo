@@ -44,10 +44,14 @@ pipeline {
       }
      stage('Cleanup Old Images in ECR') {
             steps {
-                sh "IMAGES_TO_DELETE=$( aws ecr list-images --region $AWS_DEFAULT_REGION --repository-name $IMAGE_REPO_NAME --filter "tagStatus=UNTAGGED" --query 'imageIds[*]' --output json )"
-                sh "aws ecr batch-delete-image --region $AWS_DEFAULT_REGION --repository-name $IMAGE_REPO_NAME --image-ids "$IMAGES_TO_DELETE" || true"
-
+                script {
+                    // List and delete untagged images in ECR
+                    def untaggedImages = sh(script: "aws ecr describe-images --region $AWS_DEFAULT_REGION --repository-name $IMAGE_REPO_NAME --filter 'tagStatus=UNTAGGED' --query 'imageDetails[*].imageDigest' --output json", returnStdout: true).trim()
+                    if (!untaggedImages.isEmpty()) {
+                        sh "aws ecr batch-delete-image --region $AWS_DEFAULT_REGION --repository-name $IMAGE_REPO_NAME --image-ids $untaggedImages"
+                    }
                 }
             }
-        }   
-    }
+        }
+    }   
+}
