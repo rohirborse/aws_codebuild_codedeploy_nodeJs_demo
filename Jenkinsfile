@@ -41,30 +41,16 @@ pipeline {
          }
         }
       }
-//       stage('Cleanup') {
-  //          steps {
-    //            script {
-      //              echo "Deleting untagged images..."
-        //            def IMAGES_TO_DELETE = sh(
-          //              script: "aws ecr list-images --region $AWS_DEFAULT_REGION --repository-name $IMAGE_REPO_NAME --filter 'tagStatus=UNTAGGED' --query 'imageIds[*]' --output json",
-            //            returnStatus: true,
-              //          returnStdout: true
-                //    ).trim()
-                //          echo "IMAGES_TO_DELETE"
-                  //  sh "aws ecr batch-delete-image --region $AWS_DEFAULT_REGION --repository-name $IMAGE_REPO_NAME --image-ids $IMAGES_TO_DELETE || true"
-                //}
-            //}
-       // }
-         stage('Deploy to ECS') {
-            steps {
-                script {
-                    sh """
-                        aws ecs update-service \
-                        --cluster ${ECS_CLUSTER} \
-                        --service ${ECS_SERVICE} \
-                        --force-new-deployment \
-                        --region ${AWS_DEFAULT_REGION}
-                    """
+    stage('Deploy to ECS') {
+     steps {
+        script {
+                sh """
+                     aws ecs update-service \
+                     --cluster ${ECS_CLUSTER} \
+                     --service ${ECS_SERVICE} \
+                     --force-new-deployment \
+                     --region ${AWS_DEFAULT_REGION}
+                 """
                 }
             }
         }
