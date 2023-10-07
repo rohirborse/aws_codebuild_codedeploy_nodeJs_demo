@@ -68,9 +68,18 @@ pipeline {
             echo "Images to delete: ${IMAGES_TO_DELETE}"
 
             if (IMAGES_TO_DELETE) {
-                sh """
-                    aws ecr batch-delete-image --region $AWS_DEFAULT_REGION --repository-name $IMAGE_REPO_NAME --image-ids "$IMAGES_TO_DELETE" || true
-                """
+                def deleteOutput = sh(
+                    script: """
+                        aws ecr batch-delete-image --region $AWS_DEFAULT_REGION --repository-name $IMAGE_REPO_NAME --image-ids "$IMAGES_TO_DELETE"
+                    """,
+                    returnStatus: true
+                )
+
+                if (deleteOutput == 0) {
+                    echo 'Images deleted successfully'
+                } else {
+                    error 'Failed to delete images'
+                }
             }
         }
     }
