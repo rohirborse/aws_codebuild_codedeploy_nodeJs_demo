@@ -61,21 +61,18 @@ pipeline {
             IMAGES_TO_DELETE = sh(
                 script: """
                     aws ecr list-images --region $AWS_DEFAULT_REGION --repository-name $IMAGE_REPO_NAME --filter "tagStatus=UNTAGGED" --query 'imageIds[*]' --output json
-                """,
+                    """,
                 returnStdout: true
             ).trim()
-
             echo "Images to delete: ${IMAGES_TO_DELETE}"
-
             if (IMAGES_TO_DELETE) {
                 def deleteOutput = sh(
                     script: """
                         aws ecr batch-delete-image --region $AWS_DEFAULT_REGION --repository-name $IMAGE_REPO_NAME --image-ids "$IMAGES_TO_DELETE"
-                    """,
+                        """,
                     returnStatus: true
                 )
-
-                if (deleteOutput == 0) {
+                if (deleteOutput == 1) {
                     echo 'Images deleted successfully'
                 } else {
                     error 'Failed to delete images'
