@@ -54,5 +54,14 @@ pipeline {
                 }
             }
         }
+     stage('Delete Untagged Images from ECR') {
+        steps {
+            script {
+                sh """
+                     aws ecr batch-check-layer-availability --repository-name ${IMAGE_REPO_NAME} --region ${AWS_DEFAULT_REGION} | jq -r '.layers[] | select(.layerAvailability == "UNAVAILABLE") | .layerDigest' | xargs -I {} aws ecr batch-delete-image --repository-name ${IMAGE_REPO_NAME} --image-ids imageDigest={}
+                    """
+                }
+            }
+        }
     }   
 }
