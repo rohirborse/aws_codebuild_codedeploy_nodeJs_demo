@@ -57,11 +57,21 @@ pipeline {
     stage('Delete Untagged Images from ECR') {
     steps {
         script {
-            def checkOutput = sh(script: "aws ecr batch-check-layer-availability --repository-name ${IMAGE_REPO_NAME} --region ${AWS_DEFAULT_REGION}", returnStatus: true)
-            def deleteOutput = sh(script: "aws ecr batch-delete-image --repository-name ${IMAGE_REPO_NAME} --image-ids imageDigest={}", returnStatus: true)
-            
-            echo "Check Output: ${checkOutput}"
-            echo "Delete Output: ${deleteOutput}"
+            echo 'Deleting untagged images...'
+            IMAGES_TO_DELETE = sh(
+                script: """
+                    aws ecr list-images --region $AWS_DEFAULT_REGION --repository-name $IMAGE_REPO_NAME --filter "tagStatus=UNTAGGED" --query 'imageIds[*]' --output json
+                """,
+                returnStdout: true
+            ).trim()
+
+            echo "Images to delete: ${IMAGES_TO_DELETE}"
+
+            if (IMAGES_TO_DELETE) {
+                sh """
+                    aws ecr batch-delete-image --region $AWS_DEFAULT_REGION --repository-name $IMAGE_REPO_NAME --image-ids "$IMAGES_TO_DELETE" || true
+                """
+            }
         }
     }
 }
