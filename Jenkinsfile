@@ -6,9 +6,9 @@ pipeline {
         IMAGE_REPO_NAME = "skill"
         IMAGE_TAG = "v1"
         REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}"
-        ECS_CLUSTER = "chatgpt"
-        ECS_SERVICE = "taskgpt"
-        ECS_TASK_DEFINITION = "arn:aws:ecs:${AWS_DEFAULT_REGION}:${AWS_ACCOUNT_ID}:task-definition/task:1"
+        ECS_CLUSTER = "skillgpt"
+        ECS_SERVICE = "skillgpt"
+        ECS_TASK_DEFINITION = "arn:aws:ecs:${AWS_DEFAULT_REGION}:${AWS_ACCOUNT_ID}:task-definition/task:2"
     }
 
     stages {
@@ -42,18 +42,30 @@ pipeline {
          }
         }
       }
-       stage('Cleanup') {
+//       stage('Cleanup') {
+  //          steps {
+    //            script {
+      //              echo "Deleting untagged images..."
+        //            def IMAGES_TO_DELETE = sh(
+          //              script: "aws ecr list-images --region $AWS_DEFAULT_REGION --repository-name $IMAGE_REPO_NAME --filter 'tagStatus=UNTAGGED' --query 'imageIds[*]' --output json",
+            //            returnStatus: true,
+              //          returnStdout: true
+                //    ).trim()
+                //          echo "IMAGES_TO_DELETE"
+                  //  sh "aws ecr batch-delete-image --region $AWS_DEFAULT_REGION --repository-name $IMAGE_REPO_NAME --image-ids $IMAGES_TO_DELETE || true"
+                //}
+            //}
+       // }
+         stage('Deploy to ECS') {
             steps {
                 script {
-                    echo "Deleting untagged images..."
-                    def IMAGES_TO_DELETE = sh(
-                        script: "aws ecr list-images --region $AWS_DEFAULT_REGION --repository-name $IMAGE_REPO_NAME --filter 'tagStatus=UNTAGGED' --query 'imageIds[*]' --output json",
-                        returnStatus: true,
-                        returnStdout: true
-                    ).trim()
-                    
-                    echo "IMAGES_TO_DELETE"
-                    sh "aws ecr batch-delete-image --region $AWS_DEFAULT_REGION --repository-name $IMAGE_REPO_NAME --image-ids $IMAGES_TO_DELETE || true"
+                    sh """
+                        aws ecs update-service \
+                        --cluster ${ECS_CLUSTER} \
+                        --service ${ECS_SERVICE} \
+                        --force-new-deployment \
+                        --region ${AWS_DEFAULT_REGION}
+                    """
                 }
             }
         }
